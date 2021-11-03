@@ -23,9 +23,6 @@
 
 namespace dbgroup::atomic::aopt::component
 {
-// forward declaration
-class AOPTDescriptor;
-
 /**
  * @brief A class to represent a word descriptor.
  *
@@ -57,7 +54,7 @@ class WordDescriptor
       void *addr,
       const T old_val,
       const T new_val,
-      AOPTDescriptor *parent_aopt)
+      const void *parent_aopt)
       : addr_{static_cast<std::atomic<MwCASField> *>(addr)},
         old_val_{old_val},
         new_val_{new_val},
@@ -117,7 +114,7 @@ class WordDescriptor
   /**
    * @return AOPTDescriptor*: the address of the parent AOPT descriptor.
    */
-  AOPTDescriptor *
+  const void *
   GetParent() const
   {
     return parent_;
@@ -180,7 +177,7 @@ class WordDescriptor
   MwCASField new_val_;
 
   /// An address of the corresponding AOPT descriptor
-  AOPTDescriptor *parent_;
+  const void *parent_;
 };
 
 }  // namespace dbgroup::atomic::aopt::component
