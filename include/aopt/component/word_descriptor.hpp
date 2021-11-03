@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_MWCAS_COMPONENT_MWCAS_TARGET_H_
-#define MWCAS_MWCAS_COMPONENT_MWCAS_TARGET_H_
+#ifndef AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
+#define AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
 
 #include <atomic>
 
 #include "mwcas_field.hpp"
 
-namespace dbgroup::atomic::mwcas::component
+namespace dbgroup::atomic::aopt::component
 {
+// forward declaration
+class AOPTDescriptor;
+
 /**
- * @brief A class to represent a MwCAS target.
+ * @brief A class to represent a word descriptor.
  *
  */
-class MwCASTarget
+class WordDescriptor
 {
  public:
   /*################################################################################################
@@ -35,42 +38,90 @@ class MwCASTarget
    *##############################################################################################*/
 
   /**
-   * @brief Construct an empty MwCAS target.
+   * @brief Construct an empty word descriptor.
    *
    */
-  constexpr MwCASTarget() : addr_{}, old_val_{}, new_val_{} {}
+  constexpr WordDescriptor() : addr_{}, old_val_{}, new_val_{}, parent_{} {}
 
   /**
-   * @brief Construct a new MwCAS target based on given information.
+   * @brief Construct a new word descriptor based on given information.
    *
    * @tparam T a class of MwCAS targets.
    * @param addr a target memory address.
    * @param old_val an expected value of the target address.
    * @param new_val an desired value of the target address.
+   * @param parent_aopt an AOPT descriptor that has this object.
    */
   template <class T>
-  constexpr MwCASTarget(  //
+  constexpr WordDescriptor(  //
       void *addr,
       const T old_val,
-      const T new_val)
-      : addr_{static_cast<std::atomic<MwCASField> *>(addr)}, old_val_{old_val}, new_val_{new_val}
+      const T new_val,
+      AOPTDescriptor *parent_aopt)
+      : addr_{static_cast<std::atomic<MwCASField> *>(addr)},
+        old_val_{old_val},
+        new_val_{new_val},
+        parent_{parent_aopt}
   {
   }
 
-  constexpr MwCASTarget(const MwCASTarget &) = default;
-  constexpr MwCASTarget &operator=(const MwCASTarget &obj) = default;
-  constexpr MwCASTarget(MwCASTarget &&) = default;
-  constexpr MwCASTarget &operator=(MwCASTarget &&) = default;
+  constexpr WordDescriptor(const WordDescriptor &) = default;
+  constexpr WordDescriptor &operator=(const WordDescriptor &obj) = default;
+  constexpr WordDescriptor(WordDescriptor &&) = default;
+  constexpr WordDescriptor &operator=(WordDescriptor &&) = default;
 
   /*################################################################################################
    * Public destructor
    *##############################################################################################*/
 
   /**
-   * @brief Destroy the MwCASTarget object.
+   * @brief Destroy the WordDescriptor object.
    *
    */
-  ~MwCASTarget() = default;
+  ~WordDescriptor() = default;
+
+  /*################################################################################################
+   * Public getters/setters
+   *##############################################################################################*/
+
+  /**
+   * @return void*: the target address of this descriptor.
+   */
+  void *
+  GetAddress() const
+  {
+    return addr_;
+  }
+
+  /**
+   * @return MwCASField: the expected value of this descriptor.
+   */
+  MwCASField
+  GetOldValue() const
+  {
+    return old_val_;
+  }
+
+  /**
+   * @brief Get the current value based on given status.
+   *
+   * @param status the current status of the parent AOPT descriptor.
+   * @return MwCASField: the current value in the target address.
+   */
+  MwCASField
+  GetCurrentValue(const Status status) const
+  {
+    return (status == SUCCESSFUL) ? new_val_ : old_val_;
+  }
+
+  /**
+   * @return AOPTDescriptor*: the address of the parent AOPT descriptor.
+   */
+  AOPTDescriptor *
+  GetParent() const
+  {
+    return parent_;
+  }
 
   /*################################################################################################
    * Public utility functions
@@ -79,42 +130,37 @@ class MwCASTarget
   /**
    * @brief Embed a descriptor into this target address to linearlize MwCAS operations.
    *
-   * @param desc_addr a memory address of a target descriptor.
+   * @param content a current word in the target address.
    * @retval true if the descriptor address is successfully embedded.
    * @retval false otherwise.
    */
   bool
-  EmbedDescriptor(const MwCASField desc_addr)
+  EmbedDescriptor(const MwCASField content)
   {
-    MwCASField expected = old_val_;
-    while (true) {
-      // try to embed a MwCAS decriptor
-      while (!addr_->compare_exchange_weak(expected, desc_addr, mo_relax) && expected == old_val_) {
-        // weak CAS may fail even if it can perform
-      }
-      if (!expected.IsMwCASDescriptor()) break;
+    const MwCASField desc{this, true};
 
-      // retry if another desctiptor is embedded
-      expected = old_val_;
+    MwCASField expected = content;
+    // try to embed a MwCAS decriptor
+    while (!addr_->compare_exchange_weak(expected, desc, mo_relax) && expected == content) {
+      // weak CAS may fail even if it can perform
     }
 
-    return expected == old_val_;
+    return expected == content;
   }
 
   /**
    * @brief Update/revert a value of this target address.
    *
-   * @param desc_addr an embedded descriptor in this target address.
-   * @param mwcas_success a flag to indicate a target will be updated or reverted.
+   * @param status the current status of the parent AOPT descriptor.
    */
   void
-  CompleteMwCAS(  //
-      const MwCASField desc_addr,
-      const bool mwcas_success)
+  CompleteMwCAS(const Status status)
   {
-    const MwCASField desired = (mwcas_success) ? new_val_ : old_val_;
-    MwCASField current = desc_addr;
-    while (!addr_->compare_exchange_weak(current, desired, mo_relax) && current == desc_addr) {
+    const MwCASField desc{this, true};
+    const MwCASField desired = (status == SUCCESSFUL) ? new_val_ : old_val_;
+
+    MwCASField expected = desc;
+    while (!addr_->compare_exchange_weak(expected, desired, mo_relax) && expected == desc) {
       // weak CAS may fail even if it can perform
     }
   }
@@ -132,8 +178,11 @@ class MwCASTarget
 
   /// An inserting value into a target field
   MwCASField new_val_;
+
+  /// An address of the corresponding AOPT descriptor
+  AOPTDescriptor *parent_;
 };
 
-}  // namespace dbgroup::atomic::mwcas::component
+}  // namespace dbgroup::atomic::aopt::component
 
-#endif  // MWCAS_MWCAS_COMPONENT_MWCAS_TARGET_H_
+#endif  // AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
