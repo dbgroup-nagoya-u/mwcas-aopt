@@ -14,46 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_MWCAS_MWCAS_DESCRIPTOR_H_
-#define MWCAS_MWCAS_MWCAS_DESCRIPTOR_H_
+#ifndef AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
+#define AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
 
 #include <array>
 #include <atomic>
 #include <utility>
 
-#include "components/mwcas_target.hpp"
+#include "component/word_descriptor.hpp"
+#include "memory/epoch_based_gc.hpp"
 
-namespace dbgroup::atomic::mwcas
+namespace dbgroup::atomic::aopt
 {
 /**
- * @brief Read a value from a given memory address.
- * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
- * this function.
- *
- * @tparam T an expected class of a target field
- * @param addr a target memory address to read
- * @return a read value
- */
-template <class T>
-T
-ReadMwCASField(const void *addr)
-{
-  const auto target_addr = static_cast<const std::atomic<component::MwCASField> *>(addr);
-
-  component::MwCASField target_word;
-  do {
-    target_word = target_addr->load(component::mo_relax);
-  } while (target_word.IsMwCASDescriptor());
-
-  return target_word.GetTargetData<T>();
-}
-
-/**
- * @brief A class to manage a MwCAS (multi-words compare-and-swap) operation.
+ * @brief A class to manage a MwCAS (multi-words compare-and-swap) operation by using
+ * AOPT algorithm.
  *
  */
-class alignas(component::kCacheLineSize) MwCASDescriptor
+class alignas(component::kCacheLineSize) AOPTDescriptor
 {
+  using EpochBasedGC_t = ::dbgroup::memory::EpochBasedGC<AOPTDescriptor>;
+  using Status = component::Status;
+  using WordDescriptor = component::WordDescriptor;
+  using MwCASField = component::MwCASField;
+
  public:
   /*################################################################################################
    * Public constructors and assignment operators
@@ -63,22 +47,22 @@ class alignas(component::kCacheLineSize) MwCASDescriptor
    * @brief Construct an empty descriptor for MwCAS operations.
    *
    */
-  constexpr MwCASDescriptor() : target_count_{0} {}
+  constexpr AOPTDescriptor() : status_{Status::ACTIVE}, target_count_{0} {}
 
-  constexpr MwCASDescriptor(const MwCASDescriptor &) = default;
-  constexpr MwCASDescriptor &operator=(const MwCASDescriptor &obj) = default;
-  constexpr MwCASDescriptor(MwCASDescriptor &&) = default;
-  constexpr MwCASDescriptor &operator=(MwCASDescriptor &&) = default;
+  constexpr AOPTDescriptor(const AOPTDescriptor &) = default;
+  constexpr AOPTDescriptor &operator=(const AOPTDescriptor &obj) = default;
+  constexpr AOPTDescriptor(AOPTDescriptor &&) = default;
+  constexpr AOPTDescriptor &operator=(AOPTDescriptor &&) = default;
 
   /*################################################################################################
    * Public destructors
    *##############################################################################################*/
 
   /**
-   * @brief Destroy the MwCASDescriptor object.
+   * @brief Destroy the AOPTDescriptor object.
    *
    */
-  ~MwCASDescriptor() = default;
+  ~AOPTDescriptor() = default;
 
   /*################################################################################################
    * Public getters/setters
@@ -93,9 +77,38 @@ class alignas(component::kCacheLineSize) MwCASDescriptor
     return target_count_;
   }
 
+  Status
+  GetStatus() const
+  {
+    return status_.load(component::mo_relax);
+  }
+
   /*################################################################################################
    * Public utility functions
    *##############################################################################################*/
+
+  static void
+  StartGC()
+  {
+    gc_.StartGC();
+  }
+
+  /**
+   * @brief Read a value from a given memory address.
+   * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
+   * this function.
+   *
+   * @tparam T an expected class of a target field
+   * @param addr a target memory address to read
+   * @return a read value
+   */
+  template <class T>
+  static T
+  Read(void *addr)
+  {
+    const auto guard = gc_.CreateEpochGuard();
+    return ReadInternal(addr, nullptr).second.GetTargetData<T>();
+  }
 
   /**
    * @brief Add a new MwCAS target to this descriptor.
@@ -117,7 +130,7 @@ class alignas(component::kCacheLineSize) MwCASDescriptor
     if (target_count_ == kMwCASCapacity) {
       return false;
     } else {
-      targets_[target_count_++] = MwCASTarget{addr, old_val, new_val};
+      words_[target_count_++] = WordDescriptor{addr, old_val, new_val, this};
       return true;
     }
   }
@@ -131,46 +144,129 @@ class alignas(component::kCacheLineSize) MwCASDescriptor
   bool
   MwCAS()
   {
-    const MwCASField desc_addr{this, true};
+    const auto guard = gc_.CreateEpochGuard();
 
     // serialize MwCAS operations by embedding a descriptor
     auto mwcas_success = true;
-    size_t embedded_count = 0;
-    for (size_t i = 0; i < target_count_; ++i, ++embedded_count) {
-      if (!targets_[i].EmbedDescriptor(desc_addr)) {
-        // if a target field has been already updated, MwCAS fails
+    for (size_t i = 0; i < target_count_; ++i) {
+      auto word_desc = &words_[i];
+    retry_word:
+      auto [content, value] = ReadInternal(word_desc->GetAddress(), this);
+
+      if (content.GetTargetData<WordDescriptor *>() == word_desc) {
+        // this word already points to the right place, move on
+        continue;
+      }
+
+      if (value != word_desc->GetOldValue()) {
+        // the expected value is different, the MwCAS fails
         mwcas_success = false;
         break;
       }
+
+      if (GetStatus() != Status::ACTIVE) {
+        // this AOPT descriptor has already finished
+        break;
+      }
+
+      // try to install the pointer to my descriptor
+      if (!word_desc->EmbedDescriptor(content)) {
+        // if failed, retry
+        goto retry_word;
+      }
     }
 
-    // complete MwCAS
-    for (size_t i = 0; i < embedded_count; ++i) {
-      targets_[i].CompleteMwCAS(desc_addr, mwcas_success);
+    // update status of this descriptor
+    auto expected = Status::ACTIVE;
+    const auto desired = (mwcas_success) ? Status::SUCCESSFUL : Status::FAILED;
+    while (!status_.compare_exchange_weak(expected, desired, component::mo_relax)
+           && expected == Status::ACTIVE) {
     }
 
-    return mwcas_success;
+    if (expected == Status::ACTIVE) {
+      // if this thread finalized the descriptor, mark it for reclamation
+      RetireForCleanUp();
+    }
+
+    return GetStatus() == Status::SUCCESSFUL;
   }
 
  private:
-  /*################################################################################################
-   * Internal type aliases
-   *##############################################################################################*/
+  /**
+   * @brief Read a value from a given memory address.
+   * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
+   * this function.
+   *
+   * @tparam T an expected class of a target field
+   * @param addr a target memory address to read
+   * @return a read value
+   */
+  static std::pair<MwCASField, MwCASField>
+  ReadInternal(  //
+      void *addr,
+      AOPTDescriptor *self)
+  {
+    auto target_addr = static_cast<std::atomic<MwCASField> *>(addr);
 
-  using MwCASTarget = component::MwCASTarget;
-  using MwCASField = component::MwCASField;
+    MwCASField target_word, act_val;
+    while (true) {
+      target_word = target_addr->load(component::mo_relax);
+      if (!target_word.IsWordDescriptor()) {
+        act_val = target_word;
+        break;
+      }
+
+      // found a word descriptor
+      auto word = target_word.GetTargetData<WordDescriptor *>();
+      auto parent = static_cast<AOPTDescriptor *>(word->GetParent());
+      const auto parent_status = parent->GetStatus();
+      if (parent != self && parent_status == Status::ACTIVE) {
+        parent->MwCAS();
+        continue;
+      }
+      act_val = word->GetCurrentValue(parent_status);
+      break;
+    }
+
+    return {target_word, act_val};
+  }
+
+  void
+  RetireForCleanUp()
+  {
+    thread_local std::array<AOPTDescriptor *, kMaxFinishedDescriptors> fin_desc_arr;
+    thread_local size_t fin_desc_num = 0;
+
+    if (fin_desc_num >= kMaxFinishedDescriptors) {
+      for (auto &&desc : fin_desc_arr) {
+        const auto status = desc->GetStatus();
+        for (auto &&word : desc->words_) {
+          (&word)->CompleteMwCAS(status);
+        }
+        gc_.AddGarbage(desc);
+      }
+      fin_desc_num = 0;
+    }
+
+    fin_desc_arr[fin_desc_num++] = this;
+  }
 
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
 
-  /// Target entries of MwCAS
-  MwCASTarget targets_[kMwCASCapacity];
+  inline static EpochBasedGC_t gc_{1000};
+
+  /// a status of this AOPT descriptor
+  std::atomic<Status> status_;
 
   /// The number of registered MwCAS targets
   size_t target_count_;
+
+  /// Target entries of MwCAS
+  WordDescriptor words_[kMwCASCapacity];
 };
 
-}  // namespace dbgroup::atomic::mwcas
+}  // namespace dbgroup::atomic::aopt
 
-#endif  // MWCAS_MWCAS_MWCAS_DESCRIPTOR_H_
+#endif  // AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_

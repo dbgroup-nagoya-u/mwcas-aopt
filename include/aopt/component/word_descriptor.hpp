@@ -54,7 +54,7 @@ class WordDescriptor
       void *addr,
       const T old_val,
       const T new_val,
-      const void *parent_aopt)
+      void *parent_aopt)
       : addr_{static_cast<std::atomic<MwCASField> *>(addr)},
         old_val_{old_val},
         new_val_{new_val},
@@ -114,7 +114,7 @@ class WordDescriptor
   /**
    * @return AOPTDescriptor*: the address of the parent AOPT descriptor.
    */
-  const void *
+  void *
   GetParent() const
   {
     return parent_;
@@ -177,7 +177,7 @@ class WordDescriptor
   MwCASField new_val_;
 
   /// An address of the corresponding AOPT descriptor
-  const void *parent_;
+  void *parent_;
 };
 
 }  // namespace dbgroup::atomic::aopt::component

@@ -16,6 +16,8 @@ project(
 # define source directories
 set(MWCAS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/memory-manager")
+
 #--------------------------------------------------------------------------------------#
 # Build targets
 #--------------------------------------------------------------------------------------#
@@ -39,6 +41,7 @@ target_include_directories(
 )
 target_link_libraries(
   mwcas INTERFACE
+  memory_manager
   pthread
 )
 

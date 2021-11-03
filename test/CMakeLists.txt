@@ -70,5 +70,5 @@ endfunction()
 
 # add unit tests to build targets
 ADD_MWCAS_TEST("mwcas_field_test")
-ADD_MWCAS_TEST("mwcas_target_test")
-ADD_MWCAS_TEST("mwcas_descriptor_test")
+ADD_MWCAS_TEST("word_descriptor_test")
+ADD_MWCAS_TEST("aopt_descriptor_test")
