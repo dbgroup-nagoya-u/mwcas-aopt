@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include "mwcas/components/mwcas_field.hpp"
-
-#include <gtest/gtest.h>
+#include "aopt/component/mwcas_field.hpp"
 
 #include "common.hpp"
+#include "gtest/gtest.h"
 
-namespace dbgroup::atomic::mwcas::component::test
+namespace dbgroup::atomic::aopt::component::test
 {
 template <class Target>
 class MwCASFieldFixture : public ::testing::Test
@@ -61,9 +60,9 @@ class MwCASFieldFixture : public ::testing::Test
     const auto target_word_1 = MwCASField{data_1, is_mwcas_desc};
 
     if (is_mwcas_desc) {
-      EXPECT_TRUE(target_word_1.IsMwCASDescriptor());
+      EXPECT_TRUE(target_word_1.IsWordDescriptor());
     } else {
-      EXPECT_FALSE(target_word_1.IsMwCASDescriptor());
+      EXPECT_FALSE(target_word_1.IsWordDescriptor());
     }
     EXPECT_EQ(data_1, target_word_1.GetTargetData<Target>());
   }
@@ -78,11 +77,11 @@ class MwCASFieldFixture : public ::testing::Test
     field_b = MwCASField{data_2, false};
     EXPECT_FALSE(field_a == field_b);
 
-    field_a = MwCASField{data_2, true};
+    field_b = MwCASField{data_1, true};
     EXPECT_FALSE(field_a == field_b);
 
     field_b = MwCASField{data_2, true};
-    EXPECT_TRUE(field_a == field_b);
+    EXPECT_FALSE(field_a == field_b);
   }
 
   void
@@ -95,11 +94,11 @@ class MwCASFieldFixture : public ::testing::Test
     field_b = MwCASField{data_2, false};
     EXPECT_TRUE(field_a != field_b);
 
-    field_a = MwCASField{data_2, true};
+    field_b = MwCASField{data_1, true};
     EXPECT_TRUE(field_a != field_b);
 
     field_b = MwCASField{data_2, true};
-    EXPECT_FALSE(field_a != field_b);
+    EXPECT_TRUE(field_a != field_b);
   }
 
  private:
@@ -142,4 +141,4 @@ TYPED_TEST(MwCASFieldFixture, NE_AllCombinationOfInstances_ReturnCorrectBool)
   TestFixture::VerifyNE();
 }
 
-}  // namespace dbgroup::atomic::mwcas::component::test
+}  // namespace dbgroup::atomic::aopt::component::test
