@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_MWCAS_UTILITY_H_
-#define MWCAS_MWCAS_UTILITY_H_
+#ifndef AOPT_AOPT_UTILITY_H_
+#define AOPT_AOPT_UTILITY_H_
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 
-namespace dbgroup::atomic::mwcas
+namespace dbgroup::atomic::aopt
 {
 /*##################################################################################################
  * Global enum and constants
  *################################################################################################*/
 
-#ifdef MWCAS_CAPACITY
+#ifdef AOPT_MWCAS_CAPACITY
 /// The maximum number of target words of MwCAS
-constexpr size_t kMwCASCapacity = MWCAS_CAPACITY;
+constexpr size_t kMwCASCapacity = AOPT_MWCAS_CAPACITY;
 #else
 /// The maximum number of target words of MwCAS
 constexpr size_t kMwCASCapacity = 4;
+#endif
+
+#ifdef AOPT_FINISHED_DESCRIPTOR_THRESHOLD
+/// The maximum number of finished descriptors to be retained
+constexpr size_t kMaxFinishedDescriptors = AOPT_FINISHED_DESCRIPTOR_THRESHOLD;
+#else
+/// The maximum number of finished descriptors to be retained
+constexpr size_t kMaxFinishedDescriptors = 64;
 #endif
 
 /*##################################################################################################
@@ -57,6 +65,6 @@ CanMwCAS()
   }
 }
 
-}  // namespace dbgroup::atomic::mwcas
+}  // namespace dbgroup::atomic::aopt
 
-#endif  // MWCAS_MWCAS_UTILITY_H_
+#endif  // AOPT_AOPT_UTILITY_H_

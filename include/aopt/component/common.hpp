@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_MWCAS_COMPONENT_COMMON_H_
-#define MWCAS_MWCAS_COMPONENT_COMMON_H_
+#ifndef AOPT_AOPT_COMPONENT_COMMON_H_
+#define AOPT_AOPT_COMPONENT_COMMON_H_
 
 #include "../utility.hpp"
 
-namespace dbgroup::atomic::mwcas::component
+namespace dbgroup::atomic::aopt::component
 {
 /*##################################################################################################
  * Global enum and constants
@@ -33,6 +33,17 @@ constexpr size_t kWordSize = 8;
 
 /// Assumes that the size of one cache line is 64 bytes
 constexpr size_t kCacheLineSize = 64;
+
+/**
+ * @brief An enumeration for representing AOPT status
+ *
+ */
+enum Status : uint64_t
+{
+  SUCCESSFUL = 0,
+  ACTIVE,
+  FAILED
+};
 
 /*##################################################################################################
  * Global utility structs
@@ -65,6 +76,6 @@ union CASTargetConverter<uint64_t> {
   explicit constexpr CASTargetConverter(const uint64_t target) : target_data{target} {}
 };
 
-}  // namespace dbgroup::atomic::mwcas::component
+}  // namespace dbgroup::atomic::aopt::component
 
-#endif  // MWCAS_MWCAS_COMPONENT_COMMON_H_
+#endif  // AOPT_AOPT_COMPONENT_COMMON_H_
