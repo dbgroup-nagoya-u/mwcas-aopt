@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef AOPT_TEST_COMMON_H_
-#define AOPT_TEST_COMMON_H_
+#ifndef MWCAS_AOPT_TEST_COMMON_H_
+#define MWCAS_AOPT_TEST_COMMON_H_
 
 #include <functional>
 
 #include "aopt/utility.hpp"
 
-#ifdef AOPT_TEST_THREAD_NUM
-constexpr size_t kThreadNum = AOPT_TEST_THREAD_NUM;
+#ifdef MWCAS_AOPT_TEST_THREAD_NUM
+constexpr size_t kThreadNum = MWCAS_AOPT_TEST_THREAD_NUM;
 #else
 constexpr size_t kThreadNum = 8;
 #endif
@@ -77,4 +77,4 @@ CanMwCAS<MyClass>()
 
 }  // namespace dbgroup::atomic::aopt
 
-#endif  // AOPT_TEST_COMMON_H_
+#endif  // MWCAS_AOPT_TEST_COMMON_H_

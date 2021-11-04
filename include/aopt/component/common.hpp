@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AOPT_AOPT_COMPONENT_COMMON_H_
-#define AOPT_AOPT_COMPONENT_COMMON_H_
+#ifndef MWCAS_AOPT_AOPT_COMPONENT_COMMON_H_
+#define MWCAS_AOPT_AOPT_COMPONENT_COMMON_H_
 
 #include "../utility.hpp"
 
@@ -78,4 +78,4 @@ union CASTargetConverter<uint64_t> {
 
 }  // namespace dbgroup::atomic::aopt::component
 
-#endif  // AOPT_AOPT_COMPONENT_COMMON_H_
+#endif  // MWCAS_AOPT_AOPT_COMPONENT_COMMON_H_

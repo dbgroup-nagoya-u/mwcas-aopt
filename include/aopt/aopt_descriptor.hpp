@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
-#define AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
+#ifndef MWCAS_AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
+#define MWCAS_AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
 
 #include <array>
 #include <atomic>
@@ -269,4 +269,4 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
 
 }  // namespace dbgroup::atomic::aopt
 
-#endif  // AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_
+#endif  // MWCAS_AOPT_AOPT_COMPONENT_AOPT_DESCRIPTOR_H_

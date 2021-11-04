@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
-#define AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
+#ifndef MWCAS_AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
+#define MWCAS_AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
 
 #include <atomic>
 
@@ -182,4 +182,4 @@ class WordDescriptor
 
 }  // namespace dbgroup::atomic::aopt::component
 
-#endif  // AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_
+#endif  // MWCAS_AOPT_AOPT_COMPONENT_WORD_DESCRIPTOR_H_

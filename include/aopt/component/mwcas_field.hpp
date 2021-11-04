@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
-#define AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
+#ifndef MWCAS_AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
+#define MWCAS_AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
 
 #include <atomic>
 
@@ -166,4 +166,4 @@ static_assert(sizeof(MwCASField) == kWordSize);
 
 }  // namespace dbgroup::atomic::aopt::component
 
-#endif  // AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
+#endif  // MWCAS_AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
