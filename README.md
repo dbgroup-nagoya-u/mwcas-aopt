@@ -2,9 +2,9 @@
 
 [![Ubuntu-20.04](https://github.com/dbgroup-nagoya-u/mwcas-aopt/actions/workflows/unit_tests.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/mwcas-aopt/actions/workflows/unit_tests.yaml)
 
-This repository is an open source implementation of a multi-word compare-and-swap (MwCAS) operation for research use. This implementation is based on Harris et al.'s AOPT algorithm [1].
+This repository is an open source implementation of a multi-word compare-and-swap (MwCAS) operation for research use. This implementation is based on Guerraoui et al.'s AOPT algorithm [1].
 
-> [1] T. L. Harris, K. Fraser, and I. A. Pratt, "A practical multi-word compare-and-swap operation,” In Proc. DISC, pp. 265-279, 2002.
+> [1] R. Guerraoui, A. Kogan, V. J. Marathe, and I. Zablotchi, "Efficient Multi-word Compare and Swap,” In Proc. DISC, pp. 4:1-4:19, 2020.
 
 ## Build
 

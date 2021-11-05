@@ -41,13 +41,15 @@
     "iostream",
     "JPNP",
     "KAKENHI",
+    "Kogan",
     "linearlize",
     "mwcas",
     "NCAS",
     "pthread",
     "RDCSS",
     "struct",
-    "Wextra"
+    "Wextra",
+    "Zablotchi"
   ],
   "files.associations": {
     "fstream": "cpp",
