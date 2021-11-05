@@ -28,19 +28,35 @@ namespace dbgroup::atomic::aopt
  *################################################################################################*/
 
 #ifdef MWCAS_AOPT_MWCAS_CAPACITY
-/// The maximum number of target words of MwCAS
+/// The maximum number of target words of MwCAS.
 constexpr size_t kMwCASCapacity = MWCAS_AOPT_MWCAS_CAPACITY;
 #else
-/// The maximum number of target words of MwCAS
+/// The maximum number of target words of MwCAS.
 constexpr size_t kMwCASCapacity = 4;
 #endif
 
 #ifdef MWCAS_AOPT_FINISHED_DESCRIPTOR_THRESHOLD
-/// The maximum number of finished descriptors to be retained
+/// The maximum number of finished descriptors to be retained.
 constexpr size_t kMaxFinishedDescriptors = MWCAS_AOPT_FINISHED_DESCRIPTOR_THRESHOLD;
 #else
-/// The maximum number of finished descriptors to be retained
+/// The maximum number of finished descriptors to be retained.
 constexpr size_t kMaxFinishedDescriptors = 64;
+#endif
+
+#ifdef MWCAS_AOPT_GC_INTERVAL
+/// An interval [us] to perform garbage collection.
+constexpr size_t kGCInterval = MWCAS_AOPT_GC_INTERVAL;
+#else
+/// An interval [us] to perform garbage collection.
+constexpr size_t kGCInterval = 1e5;
+#endif
+
+#ifdef MWCAS_AOPT_GC_WORKER_THREADS
+/// The number of worker threads for GC.
+constexpr size_t kGCThreadNum = MWCAS_AOPT_GC_WORKER_THREADS;
+#else
+/// The number of worker threads for GC.
+constexpr size_t kGCThreadNum = 1;
 #endif
 
 /*##################################################################################################

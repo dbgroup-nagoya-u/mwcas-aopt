@@ -321,7 +321,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    *##############################################################################################*/
 
   /// a garbage collector for expired descriptors
-  inline static EpochBasedGC_t gc_{100000, 1, true};
+  inline static EpochBasedGC_t gc_{kGCInterval, kGCThreadNum, true};
 
   /// a status of this AOPT descriptor
   std::atomic<Status> status_;
