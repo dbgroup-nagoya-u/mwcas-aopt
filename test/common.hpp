@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_TEST_COMMON_H_
-#define MWCAS_TEST_COMMON_H_
+#ifndef MWCAS_AOPT_TEST_COMMON_H_
+#define MWCAS_AOPT_TEST_COMMON_H_
 
 #include <functional>
 
-#include "mwcas/utility.hpp"
+#include "aopt/utility.hpp"
 
-#ifdef MWCAS_TEST_THREAD_NUM
-constexpr size_t kThreadNum = MWCAS_TEST_THREAD_NUM;
+#ifdef MWCAS_AOPT_TEST_THREAD_NUM
+constexpr size_t kThreadNum = MWCAS_AOPT_TEST_THREAD_NUM;
 #else
 constexpr size_t kThreadNum = 8;
 #endif
@@ -62,7 +62,7 @@ struct MyClass {
   }
 };
 
-namespace dbgroup::atomic::mwcas
+namespace dbgroup::atomic::aopt
 {
 /**
  * @brief Specialization to enable MwCAS to swap our sample class.
@@ -75,6 +75,6 @@ CanMwCAS<MyClass>()
   return true;
 }
 
-}  // namespace dbgroup::atomic::mwcas
+}  // namespace dbgroup::atomic::aopt
 
-#endif  // MWCAS_TEST_COMMON_H_
+#endif  // MWCAS_AOPT_TEST_COMMON_H_

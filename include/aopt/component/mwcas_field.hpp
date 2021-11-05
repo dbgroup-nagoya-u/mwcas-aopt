@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_MWCAS_COMPONENT_MWCAS_FIELD_H_
-#define MWCAS_MWCAS_COMPONENT_MWCAS_FIELD_H_
+#ifndef MWCAS_AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
+#define MWCAS_AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_
 
 #include <atomic>
 
 #include "common.hpp"
 
-namespace dbgroup::atomic::mwcas::component
+namespace dbgroup::atomic::aopt::component
 {
 /**
  * @brief A class to represent a MwCAS target field.
@@ -38,20 +38,20 @@ class MwCASField
    * @brief Construct an empty field for MwCAS.
    *
    */
-  constexpr MwCASField() : target_bit_arr_{}, mwcas_flag_{false} {}
+  constexpr MwCASField() : target_bit_arr_{}, desc_flag_{} {}
 
   /**
    * @brief Construct a MwCAS field with given data.
    *
    * @tparam T a target class to be embedded.
    * @param target_data target data to be embedded.
-   * @param is_mwcas_descriptor a flag to indicate this field contains a descriptor.
+   * @param is_word_descriptor a flag to indicate this field contains a descriptor.
    */
   template <class T>
   constexpr MwCASField(  //
       const T target_data,
-      const bool is_mwcas_descriptor = false)
-      : target_bit_arr_{ConvertToUint64(target_data)}, mwcas_flag_{is_mwcas_descriptor}
+      const bool is_word_descriptor = false)
+      : target_bit_arr_{ConvertToUint64(target_data)}, desc_flag_{is_word_descriptor}
   {
     // static check to validate MwCAS targets
     static_assert(sizeof(T) == kWordSize);
@@ -85,13 +85,13 @@ class MwCASField
   constexpr bool
   operator==(const MwCASField &obj) const
   {
-    return this->mwcas_flag_ == obj.mwcas_flag_ && this->target_bit_arr_ == obj.target_bit_arr_;
+    return this->desc_flag_ == obj.desc_flag_ && this->target_bit_arr_ == obj.target_bit_arr_;
   }
 
   constexpr bool
   operator!=(const MwCASField &obj) const
   {
-    return this->mwcas_flag_ != obj.mwcas_flag_ || this->target_bit_arr_ != obj.target_bit_arr_;
+    return this->desc_flag_ != obj.desc_flag_ || this->target_bit_arr_ != obj.target_bit_arr_;
   }
 
   /*################################################################################################
@@ -103,9 +103,9 @@ class MwCASField
    * @retval false otherwise.
    */
   constexpr bool
-  IsMwCASDescriptor() const
+  IsWordDescriptor() const
   {
-    return mwcas_flag_;
+    return desc_flag_;
   }
 
   /**
@@ -158,12 +158,12 @@ class MwCASField
   uint64_t target_bit_arr_ : 63;
 
   /// Representing whether this field contains a MwCAS descriptor
-  uint64_t mwcas_flag_ : 1;
+  uint64_t desc_flag_ : 1;
 };
 
 // CAS target words must be one word
 static_assert(sizeof(MwCASField) == kWordSize);
 
-}  // namespace dbgroup::atomic::mwcas::component
+}  // namespace dbgroup::atomic::aopt::component
 
-#endif  // MWCAS_MWCAS_COMPONENT_MWCAS_FIELD_H_
+#endif  // MWCAS_AOPT_AOPT_COMPONENT_MWCAS_FIELD_H_

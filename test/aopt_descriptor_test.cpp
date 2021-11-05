@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#include "mwcas/mwcas_descriptor.hpp"
-
-#include <gtest/gtest.h>
+#include "aopt/aopt_descriptor.hpp"
 
 #include <future>
 #include <mutex>
@@ -27,10 +25,11 @@
 #include <vector>
 
 #include "common.hpp"
+#include "gtest/gtest.h"
 
-namespace dbgroup::atomic::mwcas::test
+namespace dbgroup::atomic::aopt::test
 {
-class MwCASDescriptorFixture : public ::testing::Test
+class AOPTDescriptorFixture : public ::testing::Test
 {
  protected:
   /*################################################################################################
@@ -100,7 +99,7 @@ class MwCASDescriptorFixture : public ::testing::Test
       std::mt19937_64 rand_engine(kRandomSeed);
       for (size_t i = 0; i < thread_num; ++i) {
         const auto rand_seed = rand_engine();
-        threads.emplace_back(&MwCASDescriptorFixture::MwCASRandomly, this, rand_seed);
+        threads.emplace_back(&AOPTDescriptorFixture::MwCASRandomly, this, rand_seed);
       }
 
       // wait for all workers to finish initialization
@@ -148,16 +147,16 @@ class MwCASDescriptorFixture : public ::testing::Test
         // retry until MwCAS succeeds
         while (true) {
           // register MwCAS targets
-          MwCASDescriptor desc{};
+          auto desc = new AOPTDescriptor{};
           for (auto &&idx : targets) {
             auto addr = &(target_fields[idx]);
-            const auto cur_val = ReadMwCASField<Target>(addr);
+            const auto cur_val = AOPTDescriptor::Read<Target>(addr);
             const auto new_val = cur_val + 1;
-            desc.AddMwCASTarget(addr, cur_val, new_val);
+            desc->AddMwCASTarget(addr, cur_val, new_val);
           }
 
           // perform MwCAS
-          if (desc.MwCAS()) break;
+          if (desc->MwCAS()) break;
         }
       }
     }
@@ -179,14 +178,14 @@ class MwCASDescriptorFixture : public ::testing::Test
  * Public utility tests
  *------------------------------------------------------------------------------------------------*/
 
-TEST_F(MwCASDescriptorFixture, MwCAS_SingleThread_CorrectlyIncrementTargets)
+TEST_F(AOPTDescriptorFixture, MwCAS_SingleThread_CorrectlyIncrementTargets)
 {  //
   VerifyMwCAS(1);
 }
 
-TEST_F(MwCASDescriptorFixture, MwCAS_MultiThreads_CorrectlyIncrementTargets)
+TEST_F(AOPTDescriptorFixture, MwCAS_MultiThreads_CorrectlyIncrementTargets)
 {
   VerifyMwCAS(kThreadNum);
 }
 
-}  // namespace dbgroup::atomic::mwcas::test
+}  // namespace dbgroup::atomic::aopt::test

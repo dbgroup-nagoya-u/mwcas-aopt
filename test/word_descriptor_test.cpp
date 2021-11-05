@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-#include "mwcas/components/mwcas_target.hpp"
-
-#include <gtest/gtest.h>
+#include "aopt/component/word_descriptor.hpp"
 
 #include "common.hpp"
+#include "gtest/gtest.h"
 
-namespace dbgroup::atomic::mwcas::component::test
+namespace dbgroup::atomic::aopt::component::test
 {
 template <class Target>
 
-class MwCASTargetFixture : public ::testing::Test
+class WordDescriptorFixture : public ::testing::Test
 {
  protected:
   /*################################################################################################
@@ -34,7 +33,8 @@ class MwCASTargetFixture : public ::testing::Test
   void
   SetUp() override
   {
-    if constexpr (std::is_same_v<Target, uint64_t*>) {
+    dummy_aopt_desc = nullptr;
+    if constexpr (std::is_same_v<Target, uint64_t *>) {
       old_val = new uint64_t{1};
       new_val = new uint64_t{2};
     } else {
@@ -43,14 +43,13 @@ class MwCASTargetFixture : public ::testing::Test
     }
     target = old_val;
 
-    mwcas_target = MwCASTarget{&target, old_val, new_val};
-    desc = MwCASField{0UL, true};
+    word_desc = WordDescriptor{&target, old_val, new_val, dummy_aopt_desc};
   }
 
   void
   TearDown() override
   {
-    if constexpr (std::is_same_v<Target, uint64_t*>) {
+    if constexpr (std::is_same_v<Target, uint64_t *>) {
       delete old_val;
       delete new_val;
     }
@@ -63,27 +62,29 @@ class MwCASTargetFixture : public ::testing::Test
   void
   VerifyEmbedDescriptor(const bool expect_fail)
   {
-    if (expect_fail) {
-      target = new_val;
-    }
+    MwCASField expected{(expect_fail) ? new_val : old_val, false};
+    MwCASField desc_field{&word_desc, true};
 
-    const bool result = mwcas_target.EmbedDescriptor(desc);
+    const bool success = word_desc.EmbedDescriptor(expected);
 
     if (expect_fail) {
-      EXPECT_FALSE(result);
-      EXPECT_NE(CASTargetConverter{desc}.converted_data, CASTargetConverter{target}.converted_data);
+      EXPECT_FALSE(success);
+      EXPECT_NE(CASTargetConverter{desc_field}.converted_data,
+                CASTargetConverter{target}.converted_data);
     } else {
-      EXPECT_TRUE(result);
-      EXPECT_EQ(CASTargetConverter{desc}.converted_data, CASTargetConverter{target}.converted_data);
+      EXPECT_TRUE(success);
+      EXPECT_EQ(CASTargetConverter{desc_field}.converted_data,
+                CASTargetConverter{target}.converted_data);
     }
   }
 
   void
   VerifyCompleteMwCAS(const bool mwcas_success)
   {
-    ASSERT_TRUE(mwcas_target.EmbedDescriptor(desc));
+    MwCASField expected{old_val, false};
+    ASSERT_TRUE(word_desc.EmbedDescriptor(expected));
 
-    mwcas_target.CompleteMwCAS(desc, mwcas_success);
+    word_desc.CompleteMwCAS((mwcas_success) ? SUCCESSFUL : FAILED);
 
     if (mwcas_success) {
       EXPECT_EQ(new_val, target);
@@ -97,8 +98,8 @@ class MwCASTargetFixture : public ::testing::Test
    * Internal member variables
    *##############################################################################################*/
 
-  MwCASTarget mwcas_target;
-  MwCASField desc;
+  void *dummy_aopt_desc;
+  WordDescriptor word_desc;
 
   Target target;
   Target old_val;
@@ -109,31 +110,31 @@ class MwCASTargetFixture : public ::testing::Test
  * Preparation for typed testing
  *################################################################################################*/
 
-using Targets = ::testing::Types<uint64_t, uint64_t*, MyClass>;
-TYPED_TEST_CASE(MwCASTargetFixture, Targets);
+using Targets = ::testing::Types<uint64_t, uint64_t *, MyClass>;
+TYPED_TEST_CASE(WordDescriptorFixture, Targets);
 
 /*##################################################################################################
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(MwCASTargetFixture, EmbedDescriptor_TargetHasExpectedValue_EmbeddingSucceed)
+TYPED_TEST(WordDescriptorFixture, EmbedDescriptor_TargetHasExpectedValue_EmbeddingSucceed)
 {
   TestFixture::VerifyEmbedDescriptor(false);
 }
 
-TYPED_TEST(MwCASTargetFixture, EmbedDescriptor_TargetHasUnexpectedValue_EmbeddingFail)
+TYPED_TEST(WordDescriptorFixture, EmbedDescriptor_TargetHasUnexpectedValue_EmbeddingFail)
 {
   TestFixture::VerifyEmbedDescriptor(true);
 }
 
-TYPED_TEST(MwCASTargetFixture, CompleteMwCAS_MwCASSucceeded_UpdateToDesiredValue)
+TYPED_TEST(WordDescriptorFixture, CompleteMwCAS_MwCASSucceeded_UpdateToDesiredValue)
 {
   TestFixture::VerifyCompleteMwCAS(true);
 }
 
-TYPED_TEST(MwCASTargetFixture, CompleteMwCAS_MwCASFailed_RevertToExpectedValue)
+TYPED_TEST(WordDescriptorFixture, CompleteMwCAS_MwCASFailed_RevertToExpectedValue)
 {
   TestFixture::VerifyCompleteMwCAS(false);
 }
 
-}  // namespace dbgroup::atomic::mwcas::component::test
+}  // namespace dbgroup::atomic::aopt::component::test
