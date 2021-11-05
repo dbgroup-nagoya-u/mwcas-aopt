@@ -87,12 +87,6 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * Public utility functions
    *##############################################################################################*/
 
-  static void
-  StartGC()
-  {
-    gc_.StartGC();
-  }
-
   /**
    * @brief Read a value from a given memory address.
    * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
@@ -255,7 +249,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * Internal member variables
    *##############################################################################################*/
 
-  inline static EpochBasedGC_t gc_{1000};
+  inline static EpochBasedGC_t gc_{100000, 1, true};
 
   /// a status of this AOPT descriptor
   std::atomic<Status> status_;
