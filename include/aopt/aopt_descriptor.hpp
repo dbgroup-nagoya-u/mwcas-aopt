@@ -138,6 +138,8 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   bool
   MwCAS()
   {
+    thread_local FinishedDescriptors finished_descriptors{};
+
     const auto guard = gc_.CreateEpochGuard();
 
     // serialize MwCAS operations by embedding a descriptor
@@ -179,13 +181,72 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
 
     if (expected == Status::ACTIVE) {
       // if this thread finalized the descriptor, mark it for reclamation
-      RetireForCleanUp();
+      finished_descriptors.RetireForCleanUp(this);
     }
 
     return GetStatus() == Status::SUCCESSFUL;
   }
 
  private:
+  /*################################################################################################
+   * Internal classes
+   *##############################################################################################*/
+
+  class FinishedDescriptors
+  {
+   public:
+    /*##############################################################################################
+     * Public utility functions
+     *############################################################################################*/
+
+    constexpr FinishedDescriptors() : desc_arr_{}, desc_num_{0} {}
+
+    ~FinishedDescriptors() { FinalizeFinishedDescriptors(); }
+
+    /*##############################################################################################
+     * Public utility functions
+     *############################################################################################*/
+
+    void
+    RetireForCleanUp(AOPTDescriptor *desc)
+    {
+      if (desc_num_ >= kMaxFinishedDescriptors) {
+        FinalizeFinishedDescriptors();
+      }
+      desc_arr_[desc_num_++] = desc;
+    }
+
+   private:
+    /*##############################################################################################
+     * Internal utility functions
+     *############################################################################################*/
+
+    void
+    FinalizeFinishedDescriptors()
+    {
+      for (auto &&desc : desc_arr_) {
+        const auto status = desc->GetStatus();
+        for (auto &&word : desc->words_) {
+          (&word)->CompleteMwCAS(status);
+        }
+        gc_.AddGarbage(desc);
+      }
+      desc_num_ = 0;
+    }
+
+    /*##############################################################################################
+     * Internal member variables
+     *############################################################################################*/
+
+    std::array<AOPTDescriptor *, kMaxFinishedDescriptors> desc_arr_;
+
+    size_t desc_num_;
+  };
+
+  /*################################################################################################
+   * Internal utility functions
+   *##############################################################################################*/
+
   /**
    * @brief Read a value from a given memory address.
    * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
@@ -223,26 +284,6 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     }
 
     return {target_word, act_val};
-  }
-
-  void
-  RetireForCleanUp()
-  {
-    thread_local std::array<AOPTDescriptor *, kMaxFinishedDescriptors> fin_desc_arr;
-    thread_local size_t fin_desc_num = 0;
-
-    if (fin_desc_num >= kMaxFinishedDescriptors) {
-      for (auto &&desc : fin_desc_arr) {
-        const auto status = desc->GetStatus();
-        for (auto &&word : desc->words_) {
-          (&word)->CompleteMwCAS(status);
-        }
-        gc_.AddGarbage(desc);
-      }
-      fin_desc_num = 0;
-    }
-
-    fin_desc_arr[fin_desc_num++] = this;
   }
 
   /*################################################################################################

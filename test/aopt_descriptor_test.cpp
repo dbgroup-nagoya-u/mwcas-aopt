@@ -61,7 +61,7 @@ class AOPTDescriptorFixture : public ::testing::Test
     // check the target fields are correctly incremented
     size_t sum = 0;
     for (auto &&target : target_fields) {
-      sum += AOPTDescriptor::Read<Target>(&target);
+      sum += target;
     }
 
     EXPECT_EQ(kExecNum * thread_num * kMwCASCapacity, sum);
