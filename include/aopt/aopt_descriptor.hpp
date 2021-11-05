@@ -69,7 +69,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    *##############################################################################################*/
 
   /**
-   * @return the number of registered MwCAS targets
+   * @return the number of registered MwCAS targets.
    */
   constexpr size_t
   Size() const
@@ -77,6 +77,9 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     return target_count_;
   }
 
+  /**
+   * @return the current status of this descriptor.
+   */
   Status
   GetStatus() const
   {
@@ -192,21 +195,41 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * Internal classes
    *##############################################################################################*/
 
+  /**
+   * @brief A class to manage finished AOPT descriptors.
+   *
+   */
   class FinishedDescriptors
   {
    public:
     /*##############################################################################################
-     * Public utility functions
+     * Public constructors and assignment operators
      *############################################################################################*/
 
+    /**
+     * @brief Create a new FinishedDescriptors object.
+     *
+     */
     constexpr FinishedDescriptors() : desc_arr_{}, desc_num_{0} {}
 
+    /**
+     * @brief Destroy the FinishedDescriptors object.
+     *
+     */
     ~FinishedDescriptors() { FinalizeFinishedDescriptors(); }
 
     /*##############################################################################################
      * Public utility functions
      *############################################################################################*/
 
+    /**
+     * @brief Register a finished descriptor with the internal list.
+     *
+     * If the number of finished descriptors reaches a certain threshold, this function
+     * invoke finalization of finished descriptors to release them.
+     *
+     * @param desc a finished descriptor.
+     */
     void
     RetireForCleanUp(AOPTDescriptor *desc)
     {
@@ -221,6 +244,11 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      * Internal utility functions
      *############################################################################################*/
 
+    /**
+     * @brief Perform finalization for AOPT-based MwCAS.
+     *
+     * After this function, finished descriptors become targets of internal GC.
+     */
     void
     FinalizeFinishedDescriptors()
     {
@@ -238,8 +266,10 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      * Internal member variables
      *############################################################################################*/
 
+    /// pointers to finished descriptors
     std::array<AOPTDescriptor *, kMaxFinishedDescriptors> desc_arr_;
 
+    /// the current number of finished descriptors
     size_t desc_num_;
   };
 
@@ -290,6 +320,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * Internal member variables
    *##############################################################################################*/
 
+  /// a garbage collector for expired descriptors
   inline static EpochBasedGC_t gc_{100000, 1, true};
 
   /// a status of this AOPT descriptor
