@@ -51,7 +51,7 @@ target_link_libraries(mwcas_aopt INTERFACE
 
 if(DEFINED MWCAS_AOPT_MWCAS_CAPACITY)
   target_compile_definitions(mwcas_aopt INTERFACE
-    MWCAS_AOPT_CAPACITY=${MWCAS_AOPT_MWCAS_CAPACITY}
+    MWCAS_AOPT_MWCAS_CAPACITY=${MWCAS_AOPT_MWCAS_CAPACITY}
   )
 endif()
 
