@@ -137,10 +137,7 @@ class WordDescriptor
     const MwCASField desc{this, true};
 
     MwCASField expected = content;
-    // try to embed a MwCAS decriptor
-    while (!addr_->compare_exchange_weak(expected, desc, mo_relax) && expected == content) {
-      // weak CAS may fail even if it can perform
-    }
+    addr_->compare_exchange_strong(expected, desc, mo_relax);
 
     return expected == content;
   }
@@ -157,9 +154,7 @@ class WordDescriptor
     const MwCASField desired = (status == SUCCESSFUL) ? new_val_ : old_val_;
 
     MwCASField expected = desc;
-    while (!addr_->compare_exchange_weak(expected, desired, mo_relax) && expected == desc) {
-      // weak CAS may fail even if it can perform
-    }
+    addr_->compare_exchange_strong(expected, desired, mo_relax);
   }
 
  private:

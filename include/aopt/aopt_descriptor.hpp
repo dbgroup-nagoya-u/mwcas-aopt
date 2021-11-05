@@ -178,9 +178,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     // update status of this descriptor
     auto expected = Status::ACTIVE;
     const auto desired = (mwcas_success) ? Status::SUCCESSFUL : Status::FAILED;
-    while (!status_.compare_exchange_weak(expected, desired, component::mo_relax)
-           && expected == Status::ACTIVE) {
-    }
+    status_.compare_exchange_strong(expected, desired, component::mo_relax);
 
     if (expected == Status::ACTIVE) {
       // if this thread finalized the descriptor, mark it for reclamation
