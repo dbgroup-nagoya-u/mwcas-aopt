@@ -17,7 +17,9 @@ jobs:
     - name: Clone Main Repository
       uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
+        ssh-key: ${{secrets.SSH_KEY_FOR_ACTIONS}}
+        persist-credentials: false
 
     - name: Create Build Environment
       shell: bash
