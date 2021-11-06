@@ -277,13 +277,15 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     void
     FinalizeFinishedDescriptors()
     {
-      for (auto &&desc : desc_arr_) {
+      for (size_t i = 0; i < desc_num_; ++i) {
+        auto desc = desc_arr_[i];
         const auto status = desc->GetStatus();
         for (auto &&word : desc->words_) {
           (&word)->CompleteMwCAS(status);
         }
         gc_->AddGarbage(desc);
       }
+
       desc_num_ = 0;
     }
 
