@@ -42,11 +42,14 @@ class AOPTDescriptorFixture : public ::testing::Test
     for (size_t i = 0; i < kTargetFieldNum; ++i) {
       target_fields[i] = 0UL;
     }
+
+    AOPTDescriptor::StartGC();
   }
 
   void
   TearDown() override
   {
+    AOPTDescriptor::StopGC();
   }
 
   /*################################################################################################

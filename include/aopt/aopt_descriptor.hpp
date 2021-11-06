@@ -114,7 +114,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   static void
   StopGC()
   {
-    gc_.release();
+    gc_.reset(nullptr);
   }
 
   /**
@@ -130,7 +130,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   static T
   Read(void *addr)
   {
-    const auto guard = gc_.CreateEpochGuard();
+    const auto guard = gc_->CreateEpochGuard();
     return ReadInternal(addr, nullptr).second.GetTargetData<T>();
   }
 
