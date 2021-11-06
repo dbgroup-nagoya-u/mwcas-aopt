@@ -19,6 +19,7 @@
 
 #include <array>
 #include <atomic>
+#include <memory>
 #include <utility>
 
 #include "component/word_descriptor.hpp"
@@ -91,6 +92,32 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    *##############################################################################################*/
 
   /**
+   * @brief Start garbage collection for AOPT descriptors.
+   *
+   * Note that this function must be called before performing AOPT-based MwCAS.
+   *
+   * @param gc_interval interval for GC in microseconds.
+   * @param gc_thread_num the number of worker threads to release garbages.
+   */
+  static void
+  StartGC(  //
+      const size_t gc_interval = 100000,
+      const size_t gc_thread_num = 1)
+  {
+    gc_ = std::make_unique<EpochBasedGC_t>(gc_interval, gc_thread_num, true);
+  }
+
+  /**
+   * @brief Stop garbage collection for AOPT descriptors.
+   *
+   */
+  static void
+  StopGC()
+  {
+    gc_.reset(nullptr);
+  }
+
+  /**
    * @brief Read a value from a given memory address.
    * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
    * this function.
@@ -103,7 +130,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   static T
   Read(void *addr)
   {
-    const auto guard = gc_.CreateEpochGuard();
+    const auto guard = gc_->CreateEpochGuard();
     return ReadInternal(addr, nullptr).second.GetTargetData<T>();
   }
 
@@ -143,7 +170,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   {
     thread_local FinishedDescriptors finished_descriptors{};
 
-    const auto guard = gc_.CreateEpochGuard();
+    const auto guard = gc_->CreateEpochGuard();
 
     // serialize MwCAS operations by embedding a descriptor
     auto mwcas_success = true;
@@ -255,7 +282,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
         for (auto &&word : desc->words_) {
           (&word)->CompleteMwCAS(status);
         }
-        gc_.AddGarbage(desc);
+        gc_->AddGarbage(desc);
       }
       desc_num_ = 0;
     }
@@ -319,7 +346,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    *##############################################################################################*/
 
   /// a garbage collector for expired descriptors
-  inline static EpochBasedGC_t gc_{kGCInterval, kGCThreadNum, true};
+  inline static std::unique_ptr<EpochBasedGC_t> gc_{nullptr};
 
   /// a status of this AOPT descriptor
   std::atomic<Status> status_;

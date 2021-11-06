@@ -43,22 +43,6 @@ constexpr size_t kMaxFinishedDescriptors = MWCAS_AOPT_FINISHED_DESCRIPTOR_THRESH
 constexpr size_t kMaxFinishedDescriptors = 64;
 #endif
 
-#ifdef MWCAS_AOPT_GC_INTERVAL
-/// An interval [us] to perform garbage collection.
-constexpr size_t kGCInterval = MWCAS_AOPT_GC_INTERVAL;
-#else
-/// An interval [us] to perform garbage collection.
-constexpr size_t kGCInterval = 1e5;
-#endif
-
-#ifdef MWCAS_AOPT_GC_WORKER_THREADS
-/// The number of worker threads for GC.
-constexpr size_t kGCThreadNum = MWCAS_AOPT_GC_WORKER_THREADS;
-#else
-/// The number of worker threads for GC.
-constexpr size_t kGCThreadNum = 1;
-#endif
-
 /*##################################################################################################
  * Global utility functions
  *################################################################################################*/
