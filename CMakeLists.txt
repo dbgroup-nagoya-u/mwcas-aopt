@@ -61,18 +61,6 @@ if(DEFINED MWCAS_AOPT_FINISHED_DESCRIPTOR_THRESHOLD)
   )
 endif()
 
-if(DEFINED MWCAS_AOPT_GC_INTERVAL)
-  target_compile_definitions(mwcas_aopt INTERFACE
-    MWCAS_AOPT_GC_INTERVAL=${MWCAS_AOPT_GC_INTERVAL}
-  )
-endif()
-
-if(DEFINED MWCAS_AOPT_GC_WORKER_THREADS)
-  target_compile_definitions(mwcas_aopt INTERFACE
-    MWCAS_AOPT_GC_WORKER_THREADS=${MWCAS_AOPT_GC_WORKER_THREADS}
-  )
-endif()
-
 #--------------------------------------------------------------------------------------#
 # Build Unit Tests
 #--------------------------------------------------------------------------------------#

@@ -26,8 +26,6 @@ cd mwcas-aopt
 - `MWCAS_AOPT_MWCAS_CAPACITY`: the maximum number of target words of MwCAS (default: `4`).
     - In order to maximize performance, it is desirable to specify the minimum number needed. Otherwise, the extra space will pollute the CPU cache.
 - `MWCAS_AOPT_FINISHED_DESCRIPTOR_THRESHOLD`: the maximum number of finished descriptors to be retained (default: `64`).
-- `MWCAS_AOPT_GC_INTERVAL`: GC execution interval in microseconds (default: `100000`).
-- `MWCAS_AOPT_GC_WORKER_THREADS`: The number of worker threads for GC (default: `1`).
 
 #### Parameters for Unit Testing
 

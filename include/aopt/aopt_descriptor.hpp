@@ -95,11 +95,16 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * @brief Start garbage collection for AOPT descriptors.
    *
    * Note that this function must be called before performing AOPT-based MwCAS.
+   *
+   * @param gc_interval interval for GC in microseconds.
+   * @param gc_thread_num the number of worker threads to release garbages.
    */
   static void
-  StartGC()
+  StartGC(  //
+      const size_t gc_interval = 100000,
+      const size_t gc_thread_num = 1)
   {
-    gc_ = std::make_unique<EpochBasedGC_t>(kGCInterval, kGCThreadNum, true);
+    gc_ = std::make_unique<EpochBasedGC_t>(gc_interval, gc_thread_num, true);
   }
 
   /**
