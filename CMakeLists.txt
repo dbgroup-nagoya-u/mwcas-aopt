@@ -27,15 +27,9 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 add_library(mwcas_aopt INTERFACE)
+add_library(mwcas_aopt::mwcas_aopt ALIAS mwcas_aopt)
 target_compile_features(mwcas_aopt INTERFACE
   "cxx_std_17"
-)
-target_compile_options(mwcas_aopt INTERFACE
-  -Wall
-  -Wextra
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
 )
 target_include_directories(mwcas_aopt INTERFACE
   "${MWCAS_AOPT_SOURCE_DIR}/include"
