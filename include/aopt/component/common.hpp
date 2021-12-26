@@ -25,9 +25,6 @@ namespace dbgroup::atomic::aopt::component
  * Global enum and constants
  *################################################################################################*/
 
-/// A short name of std::memory_order_relaxed
-constexpr std::memory_order mo_relax = std::memory_order_relaxed;
-
 /// Assumes that the length of one word is 8 bytes
 constexpr size_t kWordSize = 8;
 
@@ -59,9 +56,9 @@ union CASTargetConverter {
   const T target_data;
   const uint64_t converted_data;
 
-  explicit constexpr CASTargetConverter(const uint64_t converted) : converted_data{converted} {}
+  explicit constexpr CASTargetConverter(uint64_t converted) : converted_data{converted} {}
 
-  explicit constexpr CASTargetConverter(const T target) : target_data{target} {}
+  explicit constexpr CASTargetConverter(T target) : target_data{target} {}
 };
 
 /**

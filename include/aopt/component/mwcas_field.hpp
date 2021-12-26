@@ -48,13 +48,13 @@ class MwCASField
    * @param is_word_descriptor a flag to indicate this field contains a descriptor.
    */
   template <class T>
-  constexpr MwCASField(  //
-      const T target_data,
-      const bool is_word_descriptor = false)
+  explicit constexpr MwCASField(  //
+      T target_data,
+      bool is_word_descriptor = false)
       : target_bit_arr_{ConvertToUint64(target_data)}, desc_flag_{is_word_descriptor}
   {
     // static check to validate MwCAS targets
-    static_assert(sizeof(T) == kWordSize);
+    static_assert(sizeof(T) == kWordSize);  // NOLINT
     static_assert(std::is_trivially_copyable_v<T>);
     static_assert(std::is_copy_constructible_v<T>);
     static_assert(std::is_move_constructible_v<T>);
@@ -82,14 +82,16 @@ class MwCASField
    * Public operators
    *##############################################################################################*/
 
-  constexpr bool
-  operator==(const MwCASField &obj) const
+  constexpr auto
+  operator==(const MwCASField &obj) const  //
+      -> bool
   {
     return this->desc_flag_ == obj.desc_flag_ && this->target_bit_arr_ == obj.target_bit_arr_;
   }
 
-  constexpr bool
-  operator!=(const MwCASField &obj) const
+  constexpr auto
+  operator!=(const MwCASField &obj) const  //
+      -> bool
   {
     return this->desc_flag_ != obj.desc_flag_ || this->target_bit_arr_ != obj.target_bit_arr_;
   }
@@ -102,8 +104,9 @@ class MwCASField
    * @retval true if this field contains a descriptor.
    * @retval false otherwise.
    */
-  constexpr bool
-  IsWordDescriptor() const
+  [[nodiscard]] constexpr auto
+  IsWordDescriptor() const  //
+      -> bool
   {
     return desc_flag_;
   }
@@ -113,15 +116,16 @@ class MwCASField
    * @return data retained in this field.
    */
   template <class T>
-  constexpr T
-  GetTargetData() const
+  [[nodiscard]] constexpr auto
+  GetTargetData() const  //
+      -> T
   {
     if constexpr (std::is_same_v<T, uint64_t>) {
       return target_bit_arr_;
     } else if constexpr (std::is_pointer_v<T>) {
       return reinterpret_cast<T>(target_bit_arr_);
     } else {
-      return CASTargetConverter<T>{target_bit_arr_}.target_data;
+      return CASTargetConverter<T>{target_bit_arr_}.target_data;  // NOLINT
     }
   }
 
@@ -138,15 +142,16 @@ class MwCASField
    * @return data converted to uint64_t.
    */
   template <class T>
-  constexpr uint64_t
-  ConvertToUint64(const T data)
+  constexpr auto
+  ConvertToUint64(const T data)  //
+      -> uint64_t
   {
     if constexpr (std::is_same_v<T, uint64_t>) {
       return data;
     } else if constexpr (std::is_pointer_v<T>) {
       return reinterpret_cast<uint64_t>(data);
     } else {
-      return CASTargetConverter{data}.converted_data;
+      return CASTargetConverter<T>{data}.converted_data;  // NOLINT
     }
   }
 

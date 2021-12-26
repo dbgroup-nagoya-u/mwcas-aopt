@@ -53,8 +53,9 @@ constexpr size_t kMaxFinishedDescriptors = 64;
  * @retval false otherwise.
  */
 template <class T>
-constexpr bool
-CanMwCAS()
+constexpr auto
+CanMwCAS()  //
+    -> bool
 {
   if constexpr (std::is_same_v<T, uint64_t>) {
     return true;

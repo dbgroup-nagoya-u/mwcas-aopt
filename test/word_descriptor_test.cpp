@@ -33,25 +33,25 @@ class WordDescriptorFixture : public ::testing::Test
   void
   SetUp() override
   {
-    dummy_aopt_desc = nullptr;
+    dummy_aopt_desc_ = nullptr;
     if constexpr (std::is_same_v<Target, uint64_t *>) {
-      old_val = new uint64_t{1};
-      new_val = new uint64_t{2};
+      old_val_ = new uint64_t{1};
+      new_val_ = new uint64_t{2};
     } else {
-      old_val = 1;
-      new_val = 2;
+      old_val_ = 1;
+      new_val_ = 2;
     }
-    target = old_val;
+    target_ = old_val_;
 
-    word_desc = WordDescriptor{&target, old_val, new_val, dummy_aopt_desc};
+    word_desc_ = WordDescriptor{&target_, old_val_, new_val_, dummy_aopt_desc_};
   }
 
   void
   TearDown() override
   {
     if constexpr (std::is_same_v<Target, uint64_t *>) {
-      delete old_val;
-      delete new_val;
+      delete old_val_;
+      delete new_val_;
     }
   }
 
@@ -62,34 +62,34 @@ class WordDescriptorFixture : public ::testing::Test
   void
   VerifyEmbedDescriptor(const bool expect_fail)
   {
-    MwCASField expected{(expect_fail) ? new_val : old_val, false};
-    MwCASField desc_field{&word_desc, true};
+    MwCASField expected{(expect_fail) ? new_val_ : old_val_, false};
+    MwCASField desc_field{&word_desc_, true};
 
-    const bool success = word_desc.EmbedDescriptor(expected);
+    const bool success = word_desc_.EmbedDescriptor(expected);
 
     if (expect_fail) {
       EXPECT_FALSE(success);
-      EXPECT_NE(CASTargetConverter{desc_field}.converted_data,
-                CASTargetConverter{target}.converted_data);
+      EXPECT_NE(CASTargetConverter<MwCASField>{desc_field}.converted_data,  // NOLINT
+                CASTargetConverter<Target>{target_}.converted_data);        // NOLINT
     } else {
       EXPECT_TRUE(success);
-      EXPECT_EQ(CASTargetConverter{desc_field}.converted_data,
-                CASTargetConverter{target}.converted_data);
+      EXPECT_EQ(CASTargetConverter<MwCASField>{desc_field}.converted_data,  // NOLINT
+                CASTargetConverter<Target>{target_}.converted_data);        // NOLINT
     }
   }
 
   void
   VerifyCompleteMwCAS(const bool mwcas_success)
   {
-    MwCASField expected{old_val, false};
-    ASSERT_TRUE(word_desc.EmbedDescriptor(expected));
+    MwCASField expected{old_val_, false};
+    ASSERT_TRUE(word_desc_.EmbedDescriptor(expected));
 
-    word_desc.CompleteMwCAS((mwcas_success) ? SUCCESSFUL : FAILED);
+    word_desc_.CompleteMwCAS((mwcas_success) ? SUCCESSFUL : FAILED);
 
     if (mwcas_success) {
-      EXPECT_EQ(new_val, target);
+      EXPECT_EQ(new_val_, target_);
     } else {
-      EXPECT_EQ(old_val, target);
+      EXPECT_EQ(old_val_, target_);
     }
   }
 
@@ -98,12 +98,12 @@ class WordDescriptorFixture : public ::testing::Test
    * Internal member variables
    *##############################################################################################*/
 
-  void *dummy_aopt_desc;
-  WordDescriptor word_desc;
+  void *dummy_aopt_desc_{};
+  WordDescriptor word_desc_{};
 
-  Target target;
-  Target old_val;
-  Target new_val;
+  Target target_{};
+  Target old_val_{};
+  Target new_val_{};
 };
 
 /*##################################################################################################
@@ -111,28 +111,28 @@ class WordDescriptorFixture : public ::testing::Test
  *################################################################################################*/
 
 using Targets = ::testing::Types<uint64_t, uint64_t *, MyClass>;
-TYPED_TEST_CASE(WordDescriptorFixture, Targets);
+TYPED_TEST_SUITE(WordDescriptorFixture, Targets);
 
 /*##################################################################################################
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(WordDescriptorFixture, EmbedDescriptor_TargetHasExpectedValue_EmbeddingSucceed)
+TYPED_TEST(WordDescriptorFixture, EmbedDescriptorWithExpectedValueSucceed)
 {
   TestFixture::VerifyEmbedDescriptor(false);
 }
 
-TYPED_TEST(WordDescriptorFixture, EmbedDescriptor_TargetHasUnexpectedValue_EmbeddingFail)
+TYPED_TEST(WordDescriptorFixture, EmbedDescriptorWithUnexpectedValueFail)
 {
   TestFixture::VerifyEmbedDescriptor(true);
 }
 
-TYPED_TEST(WordDescriptorFixture, CompleteMwCAS_MwCASSucceeded_UpdateToDesiredValue)
+TYPED_TEST(WordDescriptorFixture, CompleteMwCASWithSucceededFlagUpdateToDesiredValue)
 {
   TestFixture::VerifyCompleteMwCAS(true);
 }
 
-TYPED_TEST(WordDescriptorFixture, CompleteMwCAS_MwCASFailed_RevertToExpectedValue)
+TYPED_TEST(WordDescriptorFixture, CompleteMwCASWithFailedFlagRevertToExpectedValue)
 {
   TestFixture::VerifyCompleteMwCAS(false);
 }
