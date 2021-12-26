@@ -84,7 +84,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   Status
   GetStatus() const
   {
-    return status_.load(component::mo_relax);
+    return status_.load(std::memory_order_relaxed);
   }
 
   /*################################################################################################
@@ -218,9 +218,10 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     // update status of this descriptor
     auto expected = Status::ACTIVE;
     const auto desired = (mwcas_success) ? Status::SUCCESSFUL : Status::FAILED;
-    status_.compare_exchange_strong(expected, desired, component::mo_relax);
+    const auto success =
+        status_.compare_exchange_strong(expected, desired, std::memory_order_relaxed);
 
-    if (expected == Status::ACTIVE) {
+    if (success) {
       // if this thread finalized the descriptor, mark it for reclamation
       finished_descriptors.RetireForCleanUp(this);
     }
@@ -254,7 +255,11 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      * @brief Destroy the FinishedDescriptors object.
      *
      */
-    ~FinishedDescriptors() { FinalizeFinishedDescriptors(); }
+    ~FinishedDescriptors()
+    {
+      const auto guard = gc_->CreateEpochGuard();
+      FinalizeFinishedDescriptors();
+    }
 
     /*##############################################################################################
      * Public utility functions
@@ -290,13 +295,15 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     void
     FinalizeFinishedDescriptors()
     {
-      for (auto &&desc : desc_arr_) {
+      for (size_t i = 0; i < desc_num_; ++i) {
+        auto desc = desc_arr_[i];
         const auto status = desc->GetStatus();
         for (auto &&word : desc->words_) {
           (&word)->CompleteMwCAS(status);
         }
         gc_->AddGarbage(desc);
       }
+
       desc_num_ = 0;
     }
 
@@ -333,7 +340,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
 
     MwCASField target_word, act_val;
     while (true) {
-      target_word = target_addr->load(component::mo_relax);
+      target_word = target_addr->load(std::memory_order_acquire);
       if (!target_word.IsWordDescriptor()) {
         act_val = target_word;
         break;

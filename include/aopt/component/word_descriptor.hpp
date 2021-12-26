@@ -137,7 +137,8 @@ class WordDescriptor
     const MwCASField desc{this, true};
 
     MwCASField expected = content;
-    addr_->compare_exchange_strong(expected, desc, mo_relax);
+    addr_->compare_exchange_strong(expected, desc,  //
+                                   std::memory_order_release, std::memory_order_relaxed);
 
     return expected == content;
   }
@@ -154,7 +155,7 @@ class WordDescriptor
     const MwCASField desired = (status == SUCCESSFUL) ? new_val_ : old_val_;
 
     MwCASField expected = desc;
-    addr_->compare_exchange_strong(expected, desired, mo_relax);
+    addr_->compare_exchange_strong(expected, desired, std::memory_order_relaxed);
   }
 
  private:
