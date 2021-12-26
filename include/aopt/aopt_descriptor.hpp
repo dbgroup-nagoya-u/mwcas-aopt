@@ -48,12 +48,12 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * @brief Construct an empty descriptor for MwCAS operations.
    *
    */
-  constexpr AOPTDescriptor() : status_{Status::ACTIVE}, target_count_{0} {}
+  constexpr AOPTDescriptor() = default;
 
-  constexpr AOPTDescriptor(const AOPTDescriptor &) = default;
-  constexpr AOPTDescriptor &operator=(const AOPTDescriptor &obj) = default;
-  constexpr AOPTDescriptor(AOPTDescriptor &&) = default;
-  constexpr AOPTDescriptor &operator=(AOPTDescriptor &&) = default;
+  constexpr AOPTDescriptor(const AOPTDescriptor &) = delete;
+  constexpr AOPTDescriptor &operator=(const AOPTDescriptor &obj) = delete;
+  constexpr AOPTDescriptor(AOPTDescriptor &&) = delete;
+  constexpr AOPTDescriptor &operator=(AOPTDescriptor &&) = delete;
 
   /*################################################################################################
    * Public destructors
@@ -72,8 +72,9 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   /**
    * @return the number of registered MwCAS targets.
    */
-  constexpr size_t
-  Size() const
+  constexpr auto
+  Size() const  //
+      -> size_t
   {
     return target_count_;
   }
@@ -81,8 +82,9 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   /**
    * @return the current status of this descriptor.
    */
-  Status
-  GetStatus() const
+  auto
+  GetStatus() const  //
+      -> Status
   {
     return status_.load(std::memory_order_relaxed);
   }
@@ -122,8 +124,9 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    *
    * Note that this function tries to reuse descriptors released by GC.
    */
-  static AOPTDescriptor *
-  GetDescriptor()
+  static auto
+  GetDescriptor()  //
+      -> AOPTDescriptor *
   {
     auto *page = gc_->GetPageIfPossible<AOPTDescriptor>();
     auto *desc = (page == nullptr) ? new AOPTDescriptor{} : new (page) AOPTDescriptor{};
@@ -140,10 +143,11 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * @return a read value
    */
   template <class T>
-  static T
-  Read(void *addr)
+  static auto
+  Read(void *addr)  //
+      -> T
   {
-    const auto guard = gc_->CreateEpochGuard();
+    [[maybe_unused]] auto &&guard = gc_->CreateEpochGuard();
     return ReadInternal(addr, nullptr).second.GetTargetData<T>();
   }
 
@@ -158,11 +162,12 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * @retval false if this descriptor is already full
    */
   template <class T>
-  constexpr bool
+  constexpr auto
   AddMwCASTarget(  //
       void *addr,
       const T old_val,
-      const T new_val)
+      const T new_val)  //
+      -> bool
   {
     if (target_count_ == kMwCASCapacity) {
       return false;
@@ -178,19 +183,20 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * @retval true if a MwCAS operation succeeds
    * @retval false if a MwCAS operation fails
    */
-  bool
-  MwCAS()
+  auto
+  MwCAS()  //
+      -> bool
   {
     thread_local FinishedDescriptors finished_descriptors{};
 
-    const auto guard = gc_->CreateEpochGuard();
+    [[maybe_unused]] auto &&guard = gc_->CreateEpochGuard();
 
     // serialize MwCAS operations by embedding a descriptor
     auto mwcas_success = true;
     for (size_t i = 0; i < target_count_; ++i) {
-      auto word_desc = &words_[i];
+      auto *word_desc = &words_[i];
     retry_word:
-      auto [content, value] = ReadInternal(word_desc->GetAddress(), this);
+      auto &&[content, value] = ReadInternal(word_desc->GetAddress(), this);
 
       if (content.GetTargetData<WordDescriptor *>() == word_desc) {
         // this word already points to the right place, move on
@@ -249,7 +255,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      * @brief Create a new FinishedDescriptors object.
      *
      */
-    constexpr FinishedDescriptors() : desc_arr_{}, desc_num_{0} {}
+    constexpr FinishedDescriptors() = default;
 
     /**
      * @brief Destroy the FinishedDescriptors object.
@@ -257,7 +263,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      */
     ~FinishedDescriptors()
     {
-      const auto guard = gc_->CreateEpochGuard();
+      [[maybe_unused]] auto &&guard = gc_->CreateEpochGuard();
       FinalizeFinishedDescriptors();
     }
 
@@ -296,7 +302,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
     FinalizeFinishedDescriptors()
     {
       for (size_t i = 0; i < desc_num_; ++i) {
-        auto desc = desc_arr_[i];
+        auto *desc = desc_arr_[i];
         const auto status = desc->GetStatus();
         for (auto &&word : desc->words_) {
           (&word)->CompleteMwCAS(status);
@@ -312,10 +318,10 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      *############################################################################################*/
 
     /// pointers to finished descriptors
-    std::array<AOPTDescriptor *, kMaxFinishedDescriptors> desc_arr_;
+    std::array<AOPTDescriptor *, kMaxFinishedDescriptors> desc_arr_{};
 
     /// the current number of finished descriptors
-    size_t desc_num_;
+    size_t desc_num_{0};
   };
 
   /*################################################################################################
@@ -331,12 +337,13 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    * @param addr a target memory address to read
    * @return a read value
    */
-  static std::pair<MwCASField, MwCASField>
+  static auto
   ReadInternal(  //
       void *addr,
-      AOPTDescriptor *self)
+      AOPTDescriptor *self)  //
+      -> std::pair<MwCASField, MwCASField>
   {
-    auto target_addr = static_cast<std::atomic<MwCASField> *>(addr);
+    auto *target_addr = static_cast<std::atomic<MwCASField> *>(addr);
 
     MwCASField target_word, act_val;
     while (true) {
@@ -347,8 +354,8 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
       }
 
       // found a word descriptor
-      auto word = target_word.GetTargetData<WordDescriptor *>();
-      auto parent = static_cast<AOPTDescriptor *>(word->GetParent());
+      auto *word = target_word.GetTargetData<WordDescriptor *>();
+      auto *parent = static_cast<AOPTDescriptor *>(word->GetParent());
       const auto parent_status = parent->GetStatus();
       if (parent != self && parent_status == Status::ACTIVE) {
         parent->MwCAS();
@@ -369,10 +376,10 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   inline static std::unique_ptr<EpochBasedGC_t> gc_{nullptr};
 
   /// a status of this AOPT descriptor
-  std::atomic<Status> status_;
+  std::atomic<Status> status_{Status::ACTIVE};
 
   /// The number of registered MwCAS targets
-  size_t target_count_;
+  size_t target_count_{0};
 
   /// Target entries of MwCAS
   WordDescriptor words_[kMwCASCapacity];

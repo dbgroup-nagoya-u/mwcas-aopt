@@ -82,14 +82,16 @@ class MwCASField
    * Public operators
    *##############################################################################################*/
 
-  constexpr bool
-  operator==(const MwCASField &obj) const
+  constexpr auto
+  operator==(const MwCASField &obj) const  //
+      -> bool
   {
     return this->desc_flag_ == obj.desc_flag_ && this->target_bit_arr_ == obj.target_bit_arr_;
   }
 
-  constexpr bool
-  operator!=(const MwCASField &obj) const
+  constexpr auto
+  operator!=(const MwCASField &obj) const  //
+      -> bool
   {
     return this->desc_flag_ != obj.desc_flag_ || this->target_bit_arr_ != obj.target_bit_arr_;
   }
@@ -102,8 +104,9 @@ class MwCASField
    * @retval true if this field contains a descriptor.
    * @retval false otherwise.
    */
-  constexpr bool
-  IsWordDescriptor() const
+  constexpr auto
+  IsWordDescriptor() const  //
+      -> bool
   {
     return desc_flag_;
   }
@@ -113,8 +116,9 @@ class MwCASField
    * @return data retained in this field.
    */
   template <class T>
-  constexpr T
-  GetTargetData() const
+  constexpr auto
+  GetTargetData() const  //
+      -> T
   {
     if constexpr (std::is_same_v<T, uint64_t>) {
       return target_bit_arr_;
@@ -138,8 +142,9 @@ class MwCASField
    * @return data converted to uint64_t.
    */
   template <class T>
-  constexpr uint64_t
-  ConvertToUint64(const T data)
+  constexpr auto
+  ConvertToUint64(const T data)  //
+      -> uint64_t
   {
     if constexpr (std::is_same_v<T, uint64_t>) {
       return data;

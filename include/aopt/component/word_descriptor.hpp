@@ -38,7 +38,7 @@ class WordDescriptor
    * @brief Construct an empty word descriptor.
    *
    */
-  constexpr WordDescriptor() : addr_{}, old_val_{}, new_val_{}, parent_{} {}
+  constexpr WordDescriptor() = default;
 
   /**
    * @brief Construct a new word descriptor based on given information.
@@ -84,8 +84,9 @@ class WordDescriptor
   /**
    * @return void*: the target address of this descriptor.
    */
-  void *
-  GetAddress() const
+  auto
+  GetAddress() const  //
+      -> void *
   {
     return addr_;
   }
@@ -93,8 +94,9 @@ class WordDescriptor
   /**
    * @return MwCASField: the expected value of this descriptor.
    */
-  MwCASField
-  GetOldValue() const
+  auto
+  GetOldValue() const  //
+      -> MwCASField
   {
     return old_val_;
   }
@@ -105,8 +107,9 @@ class WordDescriptor
    * @param status the current status of the parent AOPT descriptor.
    * @return MwCASField: the current value in the target address.
    */
-  MwCASField
-  GetCurrentValue(const Status status) const
+  auto
+  GetCurrentValue(const Status status) const  //
+      -> MwCASField
   {
     return (status == SUCCESSFUL) ? new_val_ : old_val_;
   }
@@ -114,8 +117,9 @@ class WordDescriptor
   /**
    * @return AOPTDescriptor*: the address of the parent AOPT descriptor.
    */
-  void *
-  GetParent() const
+  auto
+  GetParent() const  //
+      -> void *
   {
     return parent_;
   }
@@ -131,8 +135,9 @@ class WordDescriptor
    * @retval true if the descriptor address is successfully embedded.
    * @retval false otherwise.
    */
-  bool
-  EmbedDescriptor(const MwCASField content)
+  auto
+  EmbedDescriptor(const MwCASField content)  //
+      -> bool
   {
     const MwCASField desc{this, true};
 
@@ -164,16 +169,16 @@ class WordDescriptor
    *##############################################################################################*/
 
   /// A target memory address
-  std::atomic<MwCASField> *addr_;
+  std::atomic<MwCASField> *addr_{};
 
   /// An expected value of a target field
-  MwCASField old_val_;
+  MwCASField old_val_{};
 
   /// An inserting value into a target field
-  MwCASField new_val_;
+  MwCASField new_val_{};
 
   /// An address of the corresponding AOPT descriptor
-  void *parent_;
+  void *parent_{};
 };
 
 }  // namespace dbgroup::atomic::aopt::component
