@@ -56,9 +56,9 @@ union CASTargetConverter {
   const T target_data;
   const uint64_t converted_data;
 
-  explicit constexpr CASTargetConverter(const uint64_t converted) : converted_data{converted} {}
+  explicit constexpr CASTargetConverter(uint64_t converted) : converted_data{converted} {}
 
-  explicit constexpr CASTargetConverter(const T target) : target_data{target} {}
+  explicit constexpr CASTargetConverter(T target) : target_data{target} {}
 };
 
 /**

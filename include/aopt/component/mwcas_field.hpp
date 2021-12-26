@@ -48,13 +48,13 @@ class MwCASField
    * @param is_word_descriptor a flag to indicate this field contains a descriptor.
    */
   template <class T>
-  constexpr MwCASField(  //
-      const T target_data,
-      const bool is_word_descriptor = false)
+  explicit constexpr MwCASField(  //
+      T target_data,
+      bool is_word_descriptor = false)
       : target_bit_arr_{ConvertToUint64(target_data)}, desc_flag_{is_word_descriptor}
   {
     // static check to validate MwCAS targets
-    static_assert(sizeof(T) == kWordSize);
+    static_assert(sizeof(T) == kWordSize);  // NOLINT
     static_assert(std::is_trivially_copyable_v<T>);
     static_assert(std::is_copy_constructible_v<T>);
     static_assert(std::is_move_constructible_v<T>);
@@ -104,7 +104,7 @@ class MwCASField
    * @retval true if this field contains a descriptor.
    * @retval false otherwise.
    */
-  constexpr auto
+  [[nodiscard]] constexpr auto
   IsWordDescriptor() const  //
       -> bool
   {
@@ -116,7 +116,7 @@ class MwCASField
    * @return data retained in this field.
    */
   template <class T>
-  constexpr auto
+  [[nodiscard]] constexpr auto
   GetTargetData() const  //
       -> T
   {
@@ -125,7 +125,7 @@ class MwCASField
     } else if constexpr (std::is_pointer_v<T>) {
       return reinterpret_cast<T>(target_bit_arr_);
     } else {
-      return CASTargetConverter<T>{target_bit_arr_}.target_data;
+      return CASTargetConverter<T>{target_bit_arr_}.target_data;  // NOLINT
     }
   }
 
@@ -151,7 +151,7 @@ class MwCASField
     } else if constexpr (std::is_pointer_v<T>) {
       return reinterpret_cast<uint64_t>(data);
     } else {
-      return CASTargetConverter{data}.converted_data;
+      return CASTargetConverter<T>{data}.converted_data;  // NOLINT
     }
   }
 

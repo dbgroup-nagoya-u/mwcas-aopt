@@ -84,7 +84,7 @@ class WordDescriptor
   /**
    * @return void*: the target address of this descriptor.
    */
-  auto
+  [[nodiscard]] auto
   GetAddress() const  //
       -> void *
   {
@@ -94,7 +94,7 @@ class WordDescriptor
   /**
    * @return MwCASField: the expected value of this descriptor.
    */
-  auto
+  [[nodiscard]] auto
   GetOldValue() const  //
       -> MwCASField
   {
@@ -107,7 +107,7 @@ class WordDescriptor
    * @param status the current status of the parent AOPT descriptor.
    * @return MwCASField: the current value in the target address.
    */
-  auto
+  [[nodiscard]] auto
   GetCurrentValue(const Status status) const  //
       -> MwCASField
   {
@@ -117,7 +117,7 @@ class WordDescriptor
   /**
    * @return AOPTDescriptor*: the address of the parent AOPT descriptor.
    */
-  auto
+  [[nodiscard]] auto
   GetParent() const  //
       -> void *
   {

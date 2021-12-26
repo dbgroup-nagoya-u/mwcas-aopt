@@ -43,10 +43,12 @@ struct MyClass {
   constexpr MyClass(MyClass &&) = default;
   constexpr MyClass &operator=(MyClass &&) = default;
 
-  constexpr void
+  constexpr MyClass &
   operator=(const uint64_t value)
   {
     data = value;
+
+    return *this;
   }
 
   constexpr bool

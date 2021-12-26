@@ -50,10 +50,10 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    */
   constexpr AOPTDescriptor() = default;
 
-  constexpr AOPTDescriptor(const AOPTDescriptor &) = delete;
-  constexpr AOPTDescriptor &operator=(const AOPTDescriptor &obj) = delete;
-  constexpr AOPTDescriptor(AOPTDescriptor &&) = delete;
-  constexpr AOPTDescriptor &operator=(AOPTDescriptor &&) = delete;
+  AOPTDescriptor(const AOPTDescriptor &) = delete;
+  AOPTDescriptor &operator=(const AOPTDescriptor &obj) = delete;
+  AOPTDescriptor(AOPTDescriptor &&) = delete;
+  AOPTDescriptor &operator=(AOPTDescriptor &&) = delete;
 
   /*################################################################################################
    * Public destructors
@@ -72,7 +72,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   /**
    * @return the number of registered MwCAS targets.
    */
-  constexpr auto
+  [[nodiscard]] constexpr auto
   Size() const  //
       -> size_t
   {
@@ -82,7 +82,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   /**
    * @return the current status of this descriptor.
    */
-  auto
+  [[nodiscard]] auto
   GetStatus() const  //
       -> Status
   {
@@ -169,12 +169,10 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
       const T new_val)  //
       -> bool
   {
-    if (target_count_ == kMwCASCapacity) {
-      return false;
-    } else {
-      words_[target_count_++] = WordDescriptor{addr, old_val, new_val, this};
-      return true;
-    }
+    if (target_count_ == kMwCASCapacity) return false;
+
+    words_[target_count_++] = WordDescriptor{addr, old_val, new_val, this};
+    return true;
   }
 
   /**
@@ -217,7 +215,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
       // try to install the pointer to my descriptor
       if (!word_desc->EmbedDescriptor(content)) {
         // if failed, retry
-        goto retry_word;
+        goto retry_word;  // NOLINT
       }
     }
 
@@ -256,6 +254,15 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
      *
      */
     constexpr FinishedDescriptors() = default;
+
+    FinishedDescriptors(const FinishedDescriptors &) = delete;
+    FinishedDescriptors &operator=(const FinishedDescriptors &obj) = delete;
+    FinishedDescriptors(FinishedDescriptors &&) = delete;
+    FinishedDescriptors &operator=(FinishedDescriptors &&) = delete;
+
+    /*##############################################################################################
+     * Public destructors
+     *############################################################################################*/
 
     /**
      * @brief Destroy the FinishedDescriptors object.
@@ -304,8 +311,9 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
       for (size_t i = 0; i < desc_num_; ++i) {
         auto *desc = desc_arr_[i];
         const auto status = desc->GetStatus();
-        for (auto &&word : desc->words_) {
-          (&word)->CompleteMwCAS(status);
+        const auto word_num = desc->Size();
+        for (size_t i = 0; i < word_num; ++i) {
+          desc->words_[i].CompleteMwCAS(status);
         }
         gc_->AddGarbage(desc);
       }
@@ -345,7 +353,8 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   {
     auto *target_addr = static_cast<std::atomic<MwCASField> *>(addr);
 
-    MwCASField target_word, act_val;
+    MwCASField target_word;
+    MwCASField act_val;
     while (true) {
       target_word = target_addr->load(std::memory_order_acquire);
       if (!target_word.IsWordDescriptor()) {
@@ -373,7 +382,7 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
    *##############################################################################################*/
 
   /// a garbage collector for expired descriptors
-  inline static std::unique_ptr<EpochBasedGC_t> gc_{nullptr};
+  inline static std::unique_ptr<EpochBasedGC_t> gc_{nullptr};  // NOLINT
 
   /// a status of this AOPT descriptor
   std::atomic<Status> status_{Status::ACTIVE};
