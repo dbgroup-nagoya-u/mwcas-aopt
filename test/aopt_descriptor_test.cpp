@@ -150,7 +150,7 @@ class AOPTDescriptorFixture : public ::testing::Test
         // retry until MwCAS succeeds
         while (true) {
           // register MwCAS targets
-          auto desc = new AOPTDescriptor{};
+          auto *desc = AOPTDescriptor::GetDescriptor();
           for (auto &&idx : targets) {
             auto addr = &(target_fields[idx]);
             const auto cur_val = AOPTDescriptor::Read<Target>(addr);

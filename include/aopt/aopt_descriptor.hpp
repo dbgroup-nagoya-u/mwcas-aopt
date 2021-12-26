@@ -118,6 +118,19 @@ class alignas(component::kCacheLineSize) AOPTDescriptor
   }
 
   /**
+   * @return Get a new MwCAS descriptor for the AOPT algorithm.
+   *
+   * Note that this function tries to reuse descriptors released by GC.
+   */
+  static AOPTDescriptor *
+  GetDescriptor()
+  {
+    auto *page = gc_->GetPageIfPossible<AOPTDescriptor>();
+    auto *desc = (page == nullptr) ? new AOPTDescriptor{} : new (page) AOPTDescriptor{};
+    return desc;
+  }
+
+  /**
    * @brief Read a value from a given memory address.
    * \e NOTE: if a memory address is included in MwCAS target fields, it must be read via
    * this function.
