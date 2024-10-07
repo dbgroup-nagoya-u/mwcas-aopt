@@ -1,6 +1,11 @@
 # MwCAS Based on AOPT Algorithm
 
+**This reference implementation has been merged into [our MwCAS library](https://github.com/dbgroup-nagoya-u/mwcas)**.
+
+---
+
 [![Ubuntu-20.04](https://github.com/dbgroup-nagoya-u/mwcas-aopt/actions/workflows/unit_tests.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/mwcas-aopt/actions/workflows/unit_tests.yaml)
+
 
 This repository is an open source implementation of a multi-word compare-and-swap (MwCAS) operation for research use. This implementation is based on [Guerraoui et al.'s AOPT algorithm](https://drops.dagstuhl.de/opus/volltexte/2020/13082/pdf/LIPIcs-DISC-2020-4.pdf)[^1].
 
